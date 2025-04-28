@@ -1,22 +1,34 @@
+import { DailyWeather } from "./types";
+
 export interface WeatherData {
-    // Define your weather API data structure here
-    // For example: temperature, snowfall, timestamp, etc.
     temperature?: number;
     snowfall?: number;
+    windSpeed?: number;
+    timestamp?: string;
 }
 
-export function shouldWarnSnow(weatherData: WeatherData): boolean {
-    // Placeholder logic: warn if snowfall >= 5mm in the last 24h
-    if (weatherData.snowfall && weatherData.snowfall >= 5) {
-        return true;
-    }
-    return false;
+
+
+
+export function shouldWarnSnowDaily(dailyWeather: DailyWeather): boolean {
+    // Check if any day's snowfall exceeds 10mm
+    return dailyWeather.list.some((day) => (day.rain || 0) > 10);
 }
 
-export function shouldWarnSand(prevTemp: number, currentTemp: number): boolean {
-    // Placeholder logic: warn if temperature goes above 0 and then drops to <= 0
-    if (prevTemp > 0 && currentTemp <= 0) {
-        return true;
-    }
-    return false;
+export function shouldWarnSandDaily(dailyWeather: DailyWeather): boolean {
+    // Check if temperature fluctuates above and below 0°C in any day
+    return dailyWeather.list.some((day) => {
+        const temps = [day.temp.morn, day.temp.day, day.temp.eve, day.temp.night];
+        let wasAboveZero = false;
+        for (const temp of temps) {
+            if (temp > 0) wasAboveZero = true;
+            if (wasAboveZero && temp <= 0) return true;
+        }
+        return false;
+    });
+}
+
+export function shouldWarnWindDaily(dailyWeather: DailyWeather): boolean {
+    // Check if wind speed exceeds 15 m/s in any day
+    return dailyWeather.list.some((day) => day.speed > 15);
 }

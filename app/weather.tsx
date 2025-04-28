@@ -1,86 +1,77 @@
-import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Button, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { API_KEY } from '../ApiKey'; // Create ApiKey.ts file in the root directory and add your API key there
+import React, { useContext, useState } from "react";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import WeatherCard from "../components/WeatherCard";
-
-interface Weather {
-    list: {
-        dt_txt: string;
-        main: { temp: number };
-        weather: { description: string }[];
-    }[];
-    city: { name: string; country: string };
-}
+import { WeatherContext } from "./_layout";
 
 export default function Weather() {
-    // Log the API key when the component initializes
-    useEffect(() => {
-        console.log("API_KEY:", API_KEY);
-    }, []);
+    const { hourlyWeather, dailyWeather } = useContext(WeatherContext);
 
-    const [city, setCity] = useState("");
-    const [weather, setWeather] = useState<Weather | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [selectedDate, setSelectedDate] = useState<string | null>(new Date().toISOString().split("T")[0]); // Default to current date
-
-    const searchWeather = async () => {
-        if (!city) return;
-        setLoading(true);
-        setError(null); // Reset error state
-        try {
-            // Geocoding API call to convert city name to coordinates
-            const geoRes = await fetch(
-                `http://api.openweathermap.org/geo/1.0/direct?q=${city}&limit=1&appid=${API_KEY}`
-            );
-
-            if (!geoRes.ok) {
-                throw new Error("Failed to fetch geocoding data");
-            }
-            const geoData = await geoRes.json();
-
-            if (geoData && geoData.length > 0) {
-                const { lat, lon } = geoData[0];
-                // Weather API call using the obtained coordinates
-                const weatherRes = await fetch(
-                    `https://pro.openweathermap.org/data/2.5/forecast/hourly?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`
-                );
-                const weatherJson = await weatherRes.json();
-                setWeather(weatherJson);
-                
-            } else {
-                setError("City not found");
-            }
-        } catch (error) {
-            setError("Failed to fetch weather");
-        }
-        setLoading(false);
-    };
+    const [viewMode, setViewMode] = useState<"hourly" | "daily">("hourly");
+    const [selectedDate, setSelectedDate] = useState<string | null>(
+        new Date().toISOString().split("T")[0]
+    );
 
     const getUniqueDates = () => {
-        if (!weather) return [];
-        const dates = weather.list.map((item: any) => item.dt_txt.split(" ")[0]);
+        if (!hourlyWeather) return [];
+        const dates = hourlyWeather.list.map((item: any) => item.dt_txt.split(" ")[0]);
         return Array.from(new Set(dates));
     };
 
-    const filteredWeather = () => {
-        if (!weather || !selectedDate) return weather?.list || [];
-        return weather.list.filter((item: any) => item.dt_txt.startsWith(selectedDate));
+    const filteredHourlyWeather = () => {
+        if (!hourlyWeather || !selectedDate) return [];
+        return hourlyWeather.list.filter((item: any) =>
+            item.dt_txt.startsWith(selectedDate)
+        );
     };
+
+    if (!hourlyWeather && !dailyWeather) {
+        return (
+            <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                <Text>No weather data available. Please search from the main page.</Text>
+            </View>
+        );
+    }
 
     return (
         <View style={{ flex: 1, padding: 20 }}>
-            <Text style={{ fontSize: 24, marginBottom: 10 }}>Weather Information {API_KEY}</Text>
-            <TextInput
-                placeholder="Enter city name"
-                value={city}
-                onChangeText={setCity}
-                style={{ borderWidth: 1, borderColor: "#ccc", padding: 10, marginBottom: 10, borderRadius: 5 }}
-            />
-            <Button title="Search" onPress={searchWeather} />
-            {loading && <ActivityIndicator size="large" style={{ marginTop: 20 }} />}
-            {error && <Text style={{ color: "red", marginTop: 20 }}>{error}</Text>}
-            {weather && !error && (
+            {/* View Mode Toggle */}
+            <View style={styles.toggleContainer}>
+                <TouchableOpacity
+                    onPress={() => setViewMode("hourly")}
+                    style={[
+                        styles.toggleButton,
+                        viewMode === "hourly" && styles.activeToggleButton,
+                    ]}
+                >
+                    <Text
+                        style={[
+                            styles.toggleText,
+                            viewMode === "hourly" && styles.activeToggleText,
+                        ]}
+                    >
+                        Hourly
+                    </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    onPress={() => setViewMode("daily")}
+                    style={[
+                        styles.toggleButton,
+                        viewMode === "daily" && styles.activeToggleButton,
+                    ]}
+                >
+                    <Text
+                        style={[
+                            styles.toggleText,
+                            viewMode === "daily" && styles.activeToggleText,
+                        ]}
+                    >
+                        Daily
+                    </Text>
+                </TouchableOpacity>
+            </View>
+
+            {/* Hourly Weather View */}
+            {viewMode === "hourly" && hourlyWeather && (
                 <>
                     <View style={styles.dateScroll}>
                         {getUniqueDates().map((date, index) => (
@@ -92,22 +83,24 @@ export default function Weather() {
                                     selectedDate === date && styles.selectedDateButton,
                                 ]}
                             >
-                                <Text style={[
-                                    styles.dateText,
-                                    selectedDate === date && styles.selectedDateText,
-                                ]}>
+                                <Text
+                                    style={[
+                                        styles.dateText,
+                                        selectedDate === date && styles.selectedDateText,
+                                    ]}
+                                >
                                     {date}
                                 </Text>
                             </TouchableOpacity>
                         ))}
                     </View>
                     <ScrollView style={{ marginTop: 20 }}>
-                        {filteredWeather().map((item, index) => (
+                        {filteredHourlyWeather().map((item, index) => (
                             <WeatherCard
                                 key={index}
-                                city={weather.city.name}
-                                country={weather.city.country}
-                                temperature={item.main.temp}
+                                city={hourlyWeather.city.name}
+                                country={hourlyWeather.city.country}
+                                temperature={item.main.temp + "°C"}
                                 description={item.weather[0].description}
                                 date={item.dt_txt}
                             />
@@ -115,11 +108,48 @@ export default function Weather() {
                     </ScrollView>
                 </>
             )}
+
+            {/* Daily Weather View */}
+            {viewMode === "daily" && dailyWeather && (
+                <ScrollView style={{ marginTop: 20 }}>
+                    {dailyWeather.list.map((item, index) => (
+                        <WeatherCard
+                            key={index}
+                            city={dailyWeather.city.name}
+                            country={dailyWeather.city.country}
+                            temperature={`Max: ${item.temp.max}°C, Min: ${item.temp.min}°C`}
+                            description={item.weather[0].description}
+                            date={new Date(item.dt * 1000).toISOString().split("T")[0]} // Convert UNIX timestamp to date
+                        />
+                    ))}
+                </ScrollView>
+            )}
         </View>
     );
 }
 
 const styles = StyleSheet.create({
+    toggleContainer: {
+        flexDirection: "row",
+        justifyContent: "center",
+        marginBottom: 20,
+    },
+    toggleButton: {
+        padding: 10,
+        marginHorizontal: 5,
+        backgroundColor: "#ccc",
+        borderRadius: 5,
+    },
+    activeToggleButton: {
+        backgroundColor: "#007BFF",
+    },
+    toggleText: {
+        color: "#000",
+    },
+    activeToggleText: {
+        color: "#fff",
+        fontWeight: "bold",
+    },
     dateScroll: {
         flexDirection: "row",
         marginVertical: 10,
