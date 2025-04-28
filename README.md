@@ -1,0 +1,1 @@
+Tämä on mobiiliohjelmointi-kurssin lopputyö sovelluksen tarkoitus on antaa ilmoituksia kun on lumitöitä tai hiekoitusta luvassa
