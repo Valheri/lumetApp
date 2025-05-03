@@ -11,29 +11,55 @@ export default function Weather() {
         new Date().toISOString().split("T")[0]
     );
 
+    // Extracts all unique dates from the hourly weather data.
+    // Returns an empty array if no hourly weather data is available.
     const getUniqueDates = () => {
         if (!hourlyWeather) return [];
-        const dates = hourlyWeather.list.map((item: any) => item.dt_txt.split(" ")[0]);
-        return Array.from(new Set(dates));
+        const uniqueDates = new Set(
+            hourlyWeather.list.map((item: any) =>
+                new Date(item.dt * 1000).toISOString().split("T")[0]
+            )
+        );
+        return Array.from(uniqueDates);
     };
 
+    // Filters the hourly weather data to include only entries that match the selected date.
+    // Returns an empty array if no weather data or selected date is available.
     const filteredHourlyWeather = () => {
         if (!hourlyWeather || !selectedDate) return [];
         return hourlyWeather.list.filter((item: any) =>
-            item.dt_txt.startsWith(selectedDate)
+            new Date(item.dt * 1000).toISOString().split("T")[0] === selectedDate
         );
+    };
+
+    // Formats the date string from "YYYY-MM-DD" to "DD-MM-YYYY".
+    const formatDate = (date: number) => {
+        return new Date(date * 1000).toLocaleDateString();
+    };
+
+    // Formats the time string from "YYYY-MM-DD HH:MM:SS" to "HH:MM".
+    const formatTime = (dateTimeString: string) => {
+        const time = new Date(dateTimeString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return time;
     };
 
     if (!hourlyWeather && !dailyWeather) {
         return (
-            <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-                <Text>No weather data available. Please search from the main page.</Text>
+            <View style={styles.centeredContainer}>
+                <Text style={styles.errorText}>No weather data available. Please search from the main page.</Text>
             </View>
         );
     }
 
     return (
-        <View style={{ flex: 1, padding: 20 }}>
+        <View style={styles.container}>
+            {/* City Name */}
+            {hourlyWeather && (
+                <Text style={styles.cityName}>
+                    {hourlyWeather.city.name}, {hourlyWeather.city.country}
+                </Text>
+            )}
+
             {/* View Mode Toggle */}
             <View style={styles.toggleContainer}>
                 <TouchableOpacity
@@ -89,7 +115,13 @@ export default function Weather() {
                                         selectedDate === date && styles.selectedDateText,
                                     ]}
                                 >
-                                    {date}
+                                    {formatDate(new Date(date).getTime() / 1000)}
+                                    {/*
+                                    This line takes a date string (e.g., "YYYY-MM-DD"), converts it into a JavaScript Date object,
+                                    retrieves its timestamp in milliseconds using `getTime()`, and then divides it by 1000 to convert
+                                    it into a Unix timestamp (in seconds). The resulting timestamp is passed to the `formatDate`
+                                    function, which formats it into a human-readable date string based on the user's locale.
+                                    */}
                                 </Text>
                             </TouchableOpacity>
                         ))}
@@ -98,11 +130,11 @@ export default function Weather() {
                         {filteredHourlyWeather().map((item, index) => (
                             <WeatherCard
                                 key={index}
-                                city={hourlyWeather.city.name}
-                                country={hourlyWeather.city.country}
                                 temperature={item.main.temp + "°C"}
                                 description={item.weather[0].description}
-                                date={item.dt_txt}
+                                date={`${formatDate(item.dt)} ${formatTime(item.dt_txt)}`}
+                                rain={item.rain?.["1h"]}
+                                icon={item.weather[0].icon}
                             />
                         ))}
                     </ScrollView>
@@ -115,11 +147,12 @@ export default function Weather() {
                     {dailyWeather.list.map((item, index) => (
                         <WeatherCard
                             key={index}
-                            city={dailyWeather.city.name}
-                            country={dailyWeather.city.country}
                             temperature={`Max: ${item.temp.max}°C, Min: ${item.temp.min}°C`}
                             description={item.weather[0].description}
-                            date={new Date(item.dt * 1000).toISOString().split("T")[0]} // Convert UNIX timestamp to date
+                            date={formatDate(item.dt)}
+                            rain={item.rain} // Pass rain amount
+                            snow={item.snow} // Pass snow amount
+                            icon={item.weather[0].icon}
                         />
                     ))}
                 </ScrollView>
@@ -129,6 +162,17 @@ export default function Weather() {
 }
 
 const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        padding: 20,
+        backgroundColor: "#f0f4f8",
+    },
+    centeredContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#f0f4f8",
+    },
     toggleContainer: {
         flexDirection: "row",
         justifyContent: "center",
@@ -170,5 +214,16 @@ const styles = StyleSheet.create({
     selectedDateText: {
         color: "#fff",
         fontWeight: "bold",
+    },
+    errorText: {
+        color: "red",
+        fontSize: 16,
+        textAlign: "center",
+    },
+    cityName: {
+        fontSize: 20,
+        fontWeight: "bold",
+        textAlign: "center",
+        marginBottom: 10,
     },
 });

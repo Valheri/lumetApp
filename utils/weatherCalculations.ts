@@ -1,34 +1,48 @@
-import { DailyWeather } from "./types";
+import { Alarm, DailyWeather } from "./types";
 
-export interface WeatherData {
-    temperature?: number;
-    snowfall?: number;
-    windSpeed?: number;
-    timestamp?: string;
-}
+// Thresholds for alarms
+const SNOW_THRESHOLD = 10; // Snowfall in mm
+const HUMIDITY_THRESHOLD = 65; // Humidity percentage
+const WIND_SPEED_THRESHOLD = 15; // Wind speed in m/s
 
+export function generateAlarms(dailyWeather: DailyWeather): Alarm[] {
+    const alarms: Alarm[] = [];
 
+    dailyWeather.list.forEach((day) => {
+        // Snow warning
+        if ((day.snow || 0) > SNOW_THRESHOLD) {
+            alarms.push({
+                title: "Snow Work",
+                description: `Snowfall exceeded ${SNOW_THRESHOLD}mm.`,
+                date: new Date(day.dt * 1000).toLocaleDateString(),
+            });
+        }
 
-
-export function shouldWarnSnowDaily(dailyWeather: DailyWeather): boolean {
-    // Check if any day's snowfall exceeds 10mm
-    return dailyWeather.list.some((day) => (day.rain || 0) > 10);
-}
-
-export function shouldWarnSandDaily(dailyWeather: DailyWeather): boolean {
-    // Check if temperature fluctuates above and below 0°C in any day
-    return dailyWeather.list.some((day) => {
+        // Sand warning
         const temps = [day.temp.morn, day.temp.day, day.temp.eve, day.temp.night];
         let wasAboveZero = false;
+        let isWet = day.humidity > HUMIDITY_THRESHOLD || (day.rain || 0) > 0; // Wet conditions
         for (const temp of temps) {
             if (temp > 0) wasAboveZero = true;
-            if (wasAboveZero && temp <= 0) return true;
+            if (wasAboveZero && temp <= 0 && isWet) {
+                alarms.push({
+                    title: "Sand the Streets",
+                    description: `Temperature fluctuated above and below 0°C.`,
+                    date: new Date(day.dt * 1000).toLocaleDateString(),
+                });
+                break;
+            }
         }
-        return false;
-    });
-}
 
-export function shouldWarnWindDaily(dailyWeather: DailyWeather): boolean {
-    // Check if wind speed exceeds 15 m/s in any day
-    return dailyWeather.list.some((day) => day.speed > 15);
+        // Wind warning
+        if (day.speed > WIND_SPEED_THRESHOLD) {
+            alarms.push({
+                title: "High Winds",
+                description: `Wind speed exceeded ${WIND_SPEED_THRESHOLD} m/s.`,
+                date: new Date(day.dt * 1000).toLocaleDateString(),
+            });
+        }
+    });
+
+    return alarms;
 }

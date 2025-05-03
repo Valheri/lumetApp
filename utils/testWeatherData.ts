@@ -1,105 +1,105 @@
-export const testWeatherData = {
-    cod: "200",
-    message: 0,
-    cnt: 8, // Reduced for readability
-    list: [
-        // Data for "Snow Work" warning (snowfall > 10mm in a day)
-        {
-            dt: 1745863200,
-            main: {
-                temp: -2,
-                feels_like: -5,
-                temp_min: -2,
-                temp_max: -1,
-                pressure: 1008,
-                humidity: 90,
-            },
-            weather: [{ id: 600, main: "Snow", description: "light snow", icon: "13d" }],
-            wind: { speed: 5, deg: 200 },
-            visibility: 10000,
-            pop: 1,
-            snow: { "1h": 6 }, // 6mm snowfall
-            dt_txt: "2025-04-28 08:00:00",
-        },
-        {
-            dt: 1745866800,
-            main: {
-                temp: -1,
-                feels_like: -4,
-                temp_min: -1,
-                temp_max: 0,
-                pressure: 1007,
-                humidity: 92,
-            },
-            weather: [{ id: 600, main: "Snow", description: "light snow", icon: "13n" }],
-            wind: { speed: 4, deg: 210 },
-            visibility: 10000,
-            pop: 1,
-            snow: { "1h": 5 }, // 5mm snowfall
-            dt_txt: "2025-04-28 09:00:00",
-        },
-        // Total snowfall for the day: 11mm (triggers "Snow Work" warning)
-
-        // Data for "Sand the Streets" warning (temperature fluctuates above and below 0°C)
-        {
-            dt: 1745870400,
-            main: {
-                temp: 1,
-                feels_like: -1,
-                temp_min: 1,
-                temp_max: 2,
-                pressure: 1006,
-                humidity: 85,
-            },
-            weather: [{ id: 800, main: "Clear", description: "clear sky", icon: "01d" }],
-            wind: { speed: 3, deg: 180 },
-            visibility: 10000,
-            pop: 0,
-            dt_txt: "2025-04-29 08:00:00",
-        },
-        {
-            dt: 1745874000,
-            main: {
-                temp: -1,
-                feels_like: -3,
-                temp_min: -1,
-                temp_max: 0,
-                pressure: 1005,
-                humidity: 88,
-            },
-            weather: [{ id: 800, main: "Clear", description: "clear sky", icon: "01n" }],
-            wind: { speed: 2, deg: 190 },
-            visibility: 10000,
-            pop: 0,
-            dt_txt: "2025-04-29 20:00:00",
-        },
-        // Temperature crosses above and below 0°C (triggers "Sand the Streets" warning)
-
-        // Data for "High Winds" warning (wind speed > 15 m/s)
-        {
-            dt: 1745881200,
-            main: {
-                temp: 5,
-                feels_like: 2,
-                temp_min: 5,
-                temp_max: 6,
-                pressure: 1004,
-                humidity: 80,
-            },
-            weather: [{ id: 800, main: "Clear", description: "clear sky", icon: "01d" }],
-            wind: { speed: 16, deg: 250 }, // Wind speed > 15 m/s
-            visibility: 10000,
-            pop: 0,
-            dt_txt: "2025-04-30 10:00:00",
-        },
-    ],
+export const testDailyWeatherData = {
+    cod: "200", // Internal parameter
+    message: 0, // Internal parameter
+    cnt: 3, // Number of days returned in the API response
     city: {
         id: 658225,
         name: "Helsinki",
         coord: { lat: 60.1675, lon: 24.9427 },
         country: "FI",
-        timezone: 10800,
-        sunrise: 1745807114,
-        sunset: 1745863797,
+        population: 631695, // Example population
+        timezone: 10800, // UTC+3
     },
+    list: [
+        // Day 1: Snowfall > 20mm (triggers "Snow Work" warning)
+        {
+            dt: 1745863200,
+            sunrise: 1745840000,
+            sunset: 1745880000,
+            temp: {
+                day: -1,
+                min: -3,
+                max: 0,
+                night: -2,
+                eve: -1,
+                morn: -3,
+            },
+            feels_like: {
+                day: -5,
+                night: -6,
+                eve: -4,
+                morn: -6,
+            },
+            pressure: 1008,
+            humidity: 90,
+            weather: [{ id: 600, main: "Snow", description: "light snow", icon: "13d" }],
+            speed: 5,
+            deg: 200,
+            gust: 8,
+            clouds: 75,
+            pop: 1,
+            rain: 0,
+            snow: 22, // 22mm snowfall
+        },
+        // Day 2: Temperature fluctuates above and below 0°C with high humidity (triggers "Sand the Streets" warning)
+        {
+            dt: 1745949600,
+            sunrise: 1745926400,
+            sunset: 1745966400,
+            temp: {
+                day: 1,
+                min: -2,
+                max: 2,
+                night: -1,
+                eve: 0,
+                morn: -2,
+            },
+            feels_like: {
+                day: -1,
+                night: -3,
+                eve: -2,
+                morn: -4,
+            },
+            pressure: 1006,
+            humidity: 85, // High humidity indicates wet conditions
+            weather: [{ id: 800, main: "Clear", description: "clear sky", icon: "01d" }],
+            speed: 3,
+            deg: 180,
+            gust: 5,
+            clouds: 10,
+            pop: 0.2,
+            rain: 0.5, // Light rain
+            snow: 0,
+        },
+        // Day 3: Wind speed > 15 m/s (triggers "High Winds" warning)
+        {
+            dt: 1746036000,
+            sunrise: 1746012800,
+            sunset: 1746052800,
+            temp: {
+                day: 5,
+                min: 3,
+                max: 6,
+                night: 4,
+                eve: 5,
+                morn: 3,
+            },
+            feels_like: {
+                day: 2,
+                night: 1,
+                eve: 3,
+                morn: 1,
+            },
+            pressure: 1004,
+            humidity: 70,
+            weather: [{ id: 800, main: "Clear", description: "clear sky", icon: "01d" }],
+            speed: 16, // High wind speed
+            deg: 250,
+            gust: 20,
+            clouds: 5,
+            pop: 0,
+            rain: 0,
+            snow: 0,
+        },
+    ],
 };
